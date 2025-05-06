@@ -1,14 +1,17 @@
-const oneHourAgoMS = 1000 * 60 * 60;
+const oneHourAgoMS = 1000 * 60 * 60 * 6;
 
 function processTweet(article) {
-  // Hide ads or tweets without timestamp
+  // Skip tweets without timestamp (e.g. ads)
   const timeEl = article.querySelector('time');
-  if (!timeEl) { article.style.display = 'none'; return; }
+  if (!timeEl) return;
   const tweetTime = Date.parse(timeEl.getAttribute('datetime'));
   if (tweetTime < Date.now() - oneHourAgoMS) {
     article.style.display = 'none';
     return;
   }
+
+  // Ensure tweets from the last hour are visible
+  article.style.display = '';
 
   // Only evaluate once
   if (article.dataset.evaluated) return;
