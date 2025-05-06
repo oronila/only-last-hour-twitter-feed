@@ -1,9 +1,9 @@
 const oneHourAgoMS = 1000 * 60 * 60;
 
 function processTweet(article) {
-  // Hide tweet if older than one hour
+  // Hide ads or tweets without timestamp
   const timeEl = article.querySelector('time');
-  if (!timeEl) return;
+  if (!timeEl) { article.style.display = 'none'; return; }
   const tweetTime = Date.parse(timeEl.getAttribute('datetime'));
   if (tweetTime < Date.now() - oneHourAgoMS) {
     article.style.display = 'none';
