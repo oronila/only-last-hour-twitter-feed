@@ -78,3 +78,6 @@ A: You really have to customize the prompt to get it to work effectively; larger
 
 **Q: Why Ollama?**
 A: I'm cheap and I can run models for free.
+
+**Q: Why are there so many extra ads on X/Twitter?**
+A: I made it so that only posts from the last 6 hours show up by default, making ads more prevalent as other posts are being hidden. I tried to block ads, but X/Twitter quickly blocks your feed if you do it, so I removed the feature.
