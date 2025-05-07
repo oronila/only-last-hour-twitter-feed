@@ -5,12 +5,11 @@ import json
 import requests
 from dotenv import load_dotenv
 
-# Load environment variables from .env
 load_dotenv()
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 
 app = Flask(__name__)
-CORS(app)  # Allow cross-origin requests from the extension
+CORS(app)
 
 @app.route("/check_tweet", methods=["POST"])
 def check_tweet():
@@ -23,10 +22,8 @@ def check_tweet():
         f"You are an expert Twitter growth strategist. Your goal is to help me gain followers and maximize engagement, sometimes through engagement baiting. "
         f"Given the following tweet, determine if it's a strategic one for me to reply to for audience growth. Be picky with your replies, only reply to tweets that are strategic. "
         "Respond with a JSON object containing three keys: "
-        '\"should_reply\" (true or false based on its potential for my growth), '
-        '\"reason\" (a brief explanation of why it is or isn\'t good for growth/engagement)' # , and '
-        # '\"suggestion\" (a short, actionable suggestion for how I could reply to maximize my engagement and follower gain if should_reply is true, or an empty string if false).'
-        # f"\n\nTweet: \"{tweet}\""
+        '"should_reply" (true or false based on its potential for my growth), '
+        '"reason" (a brief explanation of why it is or isn\'t good for growth/engagement)'
     )
 
     try:

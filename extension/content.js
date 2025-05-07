@@ -1,23 +1,22 @@
 const oneHourAgoMS = 1000 * 60 * 60 * 6;
 
-// --- Custom Tooltip Implementation ---
 let customTooltip = null;
 
 function ensureTooltipExists() {
   if (!customTooltip) {
     customTooltip = document.createElement('div');
-    customTooltip.style.position = 'fixed'; // Use fixed for viewport-relative positioning
+    customTooltip.style.position = 'fixed';
     customTooltip.style.display = 'none';
-    customTooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.85)'; // Semi-transparent black
+    customTooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
     customTooltip.style.color = '#fff';
     customTooltip.style.padding = '10px 15px';
     customTooltip.style.borderRadius = '8px';
     customTooltip.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
     customTooltip.style.fontSize = '14px';
     customTooltip.style.lineHeight = '1.5';
-    customTooltip.style.zIndex = '2147483647'; // Max z-index to be on top
+    customTooltip.style.zIndex = '2147483647';
     customTooltip.style.maxWidth = '300px';
-    customTooltip.style.pointerEvents = 'none'; // So the tooltip itself doesn't interfere with mouse events
+    customTooltip.style.pointerEvents = 'none';
     customTooltip.style.textAlign = 'left';
     customTooltip.style.wordBreak = 'break-word';
     document.body.appendChild(customTooltip);
@@ -25,10 +24,9 @@ function ensureTooltipExists() {
 }
 
 function showTooltip(targetElement, text) {
-  ensureTooltipExists(); // Make sure the tooltip element is in the DOM
+  ensureTooltipExists();
   customTooltip.innerText = text;
 
-  // Set display to block but keep it off-screen initially to measure its dimensions
   customTooltip.style.visibility = 'hidden';
   customTooltip.style.display = 'block';
 
@@ -36,26 +34,24 @@ function showTooltip(targetElement, text) {
   const tooltipWidth = customTooltip.offsetWidth;
   const tooltipHeight = customTooltip.offsetHeight;
 
-  let newTop = targetRect.bottom + 8; // 8px below the target
-  let newLeft = targetRect.left + (targetRect.width / 2) - (tooltipWidth / 2); // Centered below target
+  let newTop = targetRect.bottom + 8;
+  let newLeft = targetRect.left + (targetRect.width / 2) - (tooltipWidth / 2);
 
-  // Adjust if tooltip goes off-screen
-  if (newLeft < 5) newLeft = 5; // 5px padding from left edge
+  if (newLeft < 5) newLeft = 5;
   if (newLeft + tooltipWidth > window.innerWidth - 5) {
-    newLeft = window.innerWidth - tooltipWidth - 5; // 5px padding from right edge
+    newLeft = window.innerWidth - tooltipWidth - 5;
   }
 
   if (newTop + tooltipHeight > window.innerHeight - 5) {
-    // If it goes off bottom, try to position it above the element
-    newTop = targetRect.top - tooltipHeight - 8; // 8px above the target
+    newTop = targetRect.top - tooltipHeight - 8;
   }
-  if (newTop < 5) { // If it goes off top (either initially or after trying to move above)
-    newTop = 5; // 5px padding from top edge
+  if (newTop < 5) {
+    newTop = 5;
   }
 
   customTooltip.style.top = `${newTop}px`;
   customTooltip.style.left = `${newLeft}px`;
-  customTooltip.style.visibility = 'visible'; // Now make it visible at the calculated position
+  customTooltip.style.visibility = 'visible';
 }
 
 function hideTooltip() {
@@ -64,9 +60,7 @@ function hideTooltip() {
   }
 }
 
-// Helper to attach/update hover listeners
 function addOrUpdateHoverTooltip(element, textOrProvider) {
-    // Remove existing listeners if any, to prevent multiple tooltips or stale text
     if (element.customMouseEnterHandler) {
         element.removeEventListener('mouseenter', element.customMouseEnterHandler);
     }
@@ -79,18 +73,15 @@ function addOrUpdateHoverTooltip(element, textOrProvider) {
         showTooltip(event.target, text);
     };
     
-    // Store handlers on the element for potential future removal/update
     element.customMouseEnterHandler = mouseEnterHandler;
-    element.customMouseLeaveHandler = hideTooltip; // hideTooltip is a consistent function
+    element.customMouseLeaveHandler = hideTooltip;
 
     element.addEventListener('mouseenter', element.customMouseEnterHandler);
     element.addEventListener('mouseleave', element.customMouseLeaveHandler);
 }
-// --- End Custom Tooltip Implementation ---
 
 function processTweet(article) {
-  ensureTooltipExists(); // Ensure tooltip div is ready for any badges on this article
-  // Skip tweets without timestamp (e.g. ads)
+  ensureTooltipExists();
   const timeEl = article.querySelector('time');
   if (!timeEl) return;
   const tweetTime = Date.parse(timeEl.getAttribute('datetime'));
@@ -99,27 +90,22 @@ function processTweet(article) {
     return;
   }
 
-  // Ensure recent tweets are visible
   article.style.display = '';
-  // Skip if already processed
   if (article.dataset.evalState) return;
   article.dataset.evalState = 'pending';
 
-  // Add pending badge
   const pendingBadge = document.createElement('img');
   pendingBadge.src = chrome.runtime.getURL('images/hourglass-clipart.png');
-  pendingBadge.alt = 'Evaluating tweet...'; // For accessibility
-  addOrUpdateHoverTooltip(pendingBadge, 'Evaluating tweet...'); // USE CUSTOM TOOLTIP
+  pendingBadge.alt = 'Evaluating tweet...';
+  addOrUpdateHoverTooltip(pendingBadge, 'Evaluating tweet...');
   pendingBadge.style = 'position:absolute; top:5px; right:5px; width:16px; height:16px;';
   article.style.position = 'relative';
   article.appendChild(pendingBadge);
 
-  // Extract tweet text
   const contentEl = article.querySelector('div[lang]');
   const tweetText = contentEl ? contentEl.innerText : '';
   if (!tweetText) return;
 
-  // Send to server for evaluation
   chrome.runtime.sendMessage(
     { type: 'checkTweet', tweet: tweetText },
     (response) => {
@@ -127,7 +113,7 @@ function processTweet(article) {
         const errorText = 'Error: Make sure the flask server is running.';
         pendingBadge.src = chrome.runtime.getURL('images/381599_error_icon.png');
         pendingBadge.alt = errorText;
-        addOrUpdateHoverTooltip(pendingBadge, errorText); // UPDATE CUSTOM TOOLTIP
+        addOrUpdateHoverTooltip(pendingBadge, errorText);
         article.dataset.evalState = 'error';
         return;
       }
@@ -135,7 +121,7 @@ function processTweet(article) {
         const errorText = 'Error: No response from background script.';
         pendingBadge.src = chrome.runtime.getURL('images/381599_error_icon.png');
         pendingBadge.alt = errorText;
-        addOrUpdateHoverTooltip(pendingBadge, errorText); // UPDATE CUSTOM TOOLTIP
+        addOrUpdateHoverTooltip(pendingBadge, errorText);
         article.dataset.evalState = 'error';
         return;
       }
@@ -143,33 +129,30 @@ function processTweet(article) {
         const errorText = 'Error: ' + response.error;
         pendingBadge.src = chrome.runtime.getURL('images/381599_error_icon.png');
         pendingBadge.alt = errorText;
-        addOrUpdateHoverTooltip(pendingBadge, errorText); // UPDATE CUSTOM TOOLTIP
+        addOrUpdateHoverTooltip(pendingBadge, errorText);
         article.dataset.evalState = 'error';
         return;
       }
       const data = response.data;
-      // Remove pending badge
       pendingBadge.remove();
       if (data.should_reply) {
-        // Good to reply
         article.dataset.evalState = 'good';
         article.style.border = '2px solid #1da1f2';
         const badge = document.createElement('img');
         badge.src = chrome.runtime.getURL('images/Eo_circle_green_white_checkmark.svg.png');
         const reasonText = data.reason || 'Good to reply';
         badge.alt = reasonText;
-        addOrUpdateHoverTooltip(badge, reasonText); // USE CUSTOM TOOLTIP
+        addOrUpdateHoverTooltip(badge, reasonText);
         badge.style = 'position:absolute; top:5px; right:5px; width:20px; height:20px; background:#fff; border-radius:50%;';
         article.appendChild(badge);
       } else {
-        // Not recommended
         article.dataset.evalState = 'bad';
         article.style.border = '2px solid #ccc';
         const badge = document.createElement('img');
         badge.src = chrome.runtime.getURL('images/Red_X.svg.png');
         const reasonText = data.reason || 'Not recommended to reply';
         badge.alt = reasonText;
-        addOrUpdateHoverTooltip(badge, reasonText); // USE CUSTOM TOOLTIP
+        addOrUpdateHoverTooltip(badge, reasonText);
         badge.style = 'position:absolute; top:5px; right:5px; width:20px; height:20px;';
         article.appendChild(badge);
       }
