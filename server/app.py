@@ -27,7 +27,7 @@ def check_tweet():
 
     try:
         payload = {
-            "model": os.getenv("OLLAMA_MODEL", "llama2"),
+            "model": os.getenv("OLLAMA_MODEL", "llama3.2:latest"),
             "messages": [
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": prompt}
