@@ -2,7 +2,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('[background.js] Received message:', message, 'from', sender);
   if (message.type === 'checkTweet') {
     console.log('[background.js] Forwarding tweet to server:', message.tweet);
-    fetch('http://localhost:5000/check_tweet', {
+    fetch('http://localhost:5002/check_tweet', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tweet: message.tweet })

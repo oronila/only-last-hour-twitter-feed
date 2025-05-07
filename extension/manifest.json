@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "X Vibe Replying",
   "version": "0.1.0",
-  "description": "Hide all tweets older than one hour on your timeline",
+  "description": "Find the best tweets to reply to on X. Filter out the bad ones.",
   "permissions": ["activeTab", "scripting"],
   "host_permissions": ["https://twitter.com/*", "https://x.com/*", "http://localhost:5000/*"],
   "background": {
