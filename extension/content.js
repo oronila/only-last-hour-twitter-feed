@@ -2,6 +2,7 @@ let customTooltip = null;
 let currentFilterMilliseconds = 1 * 60 * 60 * 1000; // Default to 1 hour
 let currentOldTweetAction = 'hide'; // Default action
 let currentBadTweetAction = 'mark'; // Default action for bad tweets
+let currentIsEvaluationEnabled = true; // Default to true
 
 function ensureTooltipExists() {
   if (!customTooltip) {
@@ -82,15 +83,22 @@ function addOrUpdateHoverTooltip(element, textOrProvider) {
 }
 
 function loadSettingsAndScanTweets() {
-  chrome.storage.sync.get(['filterHours', 'oldTweetAction', 'badTweetAction'], (data) => {
-    let newFilterHours = 1; // Default to 1 hour
+  chrome.storage.sync.get([
+    'filterHours', 
+    'oldTweetAction', 
+    'badTweetAction', 
+    'customPrompt', // Though not directly used in content.js, good to be aware if it affects scan logic indirectly
+    'isEvaluationEnabled'
+  ], (data) => {
+    let newFilterHours = 1;
     if (data.filterHours !== undefined) {
       newFilterHours = parseInt(data.filterHours, 10);
     }
-    currentOldTweetAction = data.oldTweetAction || 'hide'; // Update and default
-    currentBadTweetAction = data.badTweetAction || 'mark'; // Load and default
+    currentOldTweetAction = data.oldTweetAction || 'hide';
+    currentBadTweetAction = data.badTweetAction || 'mark';
+    currentIsEvaluationEnabled = data.isEvaluationEnabled !== undefined ? data.isEvaluationEnabled : true;
 
-    if (newFilterHours <= 0) { // 0 or negative means show all
+    if (newFilterHours <= 0) {
       currentFilterMilliseconds = -1; // Special value to indicate no filtering
     } else {
       currentFilterMilliseconds = newFilterHours * 60 * 60 * 1000;
@@ -102,6 +110,11 @@ function loadSettingsAndScanTweets() {
     document.querySelectorAll('article').forEach(article => {
       article.style.display = ''; // Reset display before re-processing
       article.dataset.evalState = ''; // Reset evalState to allow re-processing
+      // If evaluation is globally disabled, remove any LLM-related badges
+      if (!currentIsEvaluationEnabled) {
+        const llmBadges = article.querySelectorAll('img[alt*="Evaluating"], img[alt*="Good to reply"], img[alt*="Not recommended"], img[alt*="Error"]');
+        llmBadges.forEach(b => b.remove());
+      }
     });
     scanTimeline();
   });
@@ -155,12 +168,20 @@ function processTweet(article) {
   if (article.dataset.evalState === 'old_marked') {
     const oldBadge = article.querySelector('img[alt="Outside preferred timeframe"]');
     if (oldBadge) oldBadge.remove();
-    article.dataset.evalState = ''; // Clear state so it can be evaluated by LLM if needed
+    article.dataset.evalState = '';
   }
   article.style.display = '';
 
-  // Standard processing if not filtered by age
-  if (article.dataset.evalState && article.dataset.evalState !== 'pending') return; // Skip if processed by LLM or errored
+  // If global evaluation is disabled, stop here after age processing and cleanup.
+  if (!currentIsEvaluationEnabled) {
+    // Ensure any lingering LLM badges from previous states are removed if evaluation just got disabled.
+    const llmBadges = article.querySelectorAll('img[alt*="Evaluating"], img[alt*="Good to reply"], img[alt*="Not recommended"], img[alt*="Error"]');
+    llmBadges.forEach(b => b.remove());
+    return;
+  }
+
+  // Standard processing if not filtered by age AND evaluation is enabled
+  if (article.dataset.evalState && article.dataset.evalState !== 'pending') return;
   if (article.dataset.evalState === 'pending') return; // Already pending LLM evaluation
 
   article.dataset.evalState = 'pending';
@@ -266,8 +287,8 @@ function init() {
 
 // Listen for changes in storage
 chrome.storage.onChanged.addListener((changes, namespace) => {
-  if (namespace === 'sync' && (changes.filterHours || changes.oldTweetAction || changes.badTweetAction)) { // Listen to all three
-    loadSettingsAndScanTweets(); // Use renamed function
+  if (namespace === 'sync' && (changes.filterHours || changes.oldTweetAction || changes.badTweetAction || changes.isEvaluationEnabled || changes.customPrompt)) { // Listen to all relevant changes
+    loadSettingsAndScanTweets();
   }
 });
 

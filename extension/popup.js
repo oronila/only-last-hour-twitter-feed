@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const oldTweetActionSelect = document.getElementById('oldTweetAction');
   const badTweetActionSelect = document.getElementById('badTweetAction');
   const customPromptTextarea = document.getElementById('customPrompt');
+  const enableEvaluationCheckbox = document.getElementById('enableEvaluation');
   const saveButton = document.getElementById('saveSettings');
   const statusMessage = document.getElementById('statusMessage');
 
@@ -13,12 +14,14 @@ document.addEventListener('DOMContentLoaded', () => {
     'filterHours', 
     'oldTweetAction',
     'badTweetAction',
-    'customPrompt'
+    'customPrompt',
+    'isEvaluationEnabled'
   ], (data) => {
     filterHoursInput.value = data.filterHours !== undefined ? data.filterHours : 6;
     oldTweetActionSelect.value = data.oldTweetAction !== undefined ? data.oldTweetAction : 'hide';
     badTweetActionSelect.value = data.badTweetAction !== undefined ? data.badTweetAction : 'mark';
     customPromptTextarea.value = data.customPrompt !== undefined ? data.customPrompt : DEFAULT_CUSTOM_PROMPT;
+    enableEvaluationCheckbox.checked = data.isEvaluationEnabled !== undefined ? data.isEvaluationEnabled : true;
   });
 
   // Save settings
@@ -27,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const oldAction = oldTweetActionSelect.value;
     const badAction = badTweetActionSelect.value;
     const customPromptValue = customPromptTextarea.value.trim();
+    const evaluationEnabled = enableEvaluationCheckbox.checked;
 
     if (isNaN(hours) || hours < 0) {
       statusMessage.textContent = 'Please enter a valid non-negative number for hours.';
@@ -44,7 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
       filterHours: hours,
       oldTweetAction: oldAction,
       badTweetAction: badAction,
-      customPrompt: customPromptValue
+      customPrompt: customPromptValue,
+      isEvaluationEnabled: evaluationEnabled
     }, () => {
       statusMessage.textContent = 'Settings saved!';
       statusMessage.style.color = 'green';
