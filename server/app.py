@@ -20,16 +20,20 @@ def check_tweet():
         return jsonify({"error": "No tweet provided"}), 400
 
     prompt = (
-        f"Given the following tweet, determine whether it is a good one to reply to. "
-        "Respond with a JSON object containing two keys: \"should_reply\" (true or false) and \"reason\" (a brief explanation)."
-        f"\n\nTweet: \"{tweet}\""
+        f"You are an expert Twitter growth strategist. Your goal is to help me gain followers and maximize engagement, sometimes through engagement baiting. "
+        f"Given the following tweet, determine if it's a strategic one for me to reply to for audience growth. Be picky with your replies, only reply to tweets that are strategic. "
+        "Respond with a JSON object containing three keys: "
+        '\"should_reply\" (true or false based on its potential for my growth), '
+        '\"reason\" (a brief explanation of why it is or isn\'t good for growth/engagement)' # , and '
+        # '\"suggestion\" (a short, actionable suggestion for how I could reply to maximize my engagement and follower gain if should_reply is true, or an empty string if false).'
+        # f"\n\nTweet: \"{tweet}\""
     )
 
     try:
         payload = {
             "model": os.getenv("OLLAMA_MODEL", "qwen3"),
             "messages": [
-                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "system", "content": "You are a helpful assistant acting as a Twitter growth strategist."},
                 {"role": "user", "content": prompt}
             ],
             "temperature": 0.7,

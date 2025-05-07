@@ -119,15 +119,12 @@ function processTweet(article) {
   const tweetText = contentEl ? contentEl.innerText : '';
   if (!tweetText) return;
 
-  console.log('[content.js] sending checkTweet for:', tweetText);
   // Send to server for evaluation
   chrome.runtime.sendMessage(
     { type: 'checkTweet', tweet: tweetText },
     (response) => {
-      console.log('[content.js] Received response from background:', response);
       if (chrome.runtime.lastError) {
-        console.error('[content.js] chrome.runtime.lastError:', chrome.runtime.lastError.message);
-        const errorText = 'Error: ' + chrome.runtime.lastError.message;
+        const errorText = 'Error: Make sure the flask server is running.';
         pendingBadge.src = chrome.runtime.getURL('images/381599_error_icon.png');
         pendingBadge.alt = errorText;
         addOrUpdateHoverTooltip(pendingBadge, errorText); // UPDATE CUSTOM TOOLTIP
@@ -135,7 +132,6 @@ function processTweet(article) {
         return;
       }
       if (!response) {
-        console.error('[content.js] Received undefined response from background.js');
         const errorText = 'Error: No response from background script.';
         pendingBadge.src = chrome.runtime.getURL('images/381599_error_icon.png');
         pendingBadge.alt = errorText;
@@ -144,7 +140,6 @@ function processTweet(article) {
         return;
       }
       if (response.error) {
-        console.error('[content.js] Error from background script:', response.error);
         const errorText = 'Error: ' + response.error;
         pendingBadge.src = chrome.runtime.getURL('images/381599_error_icon.png');
         pendingBadge.alt = errorText;
@@ -187,7 +182,6 @@ function scanTimeline() {
 }
 
 function init() {
-  console.log('[content.js] init called');
   scanTimeline();
   const timeline = document.querySelector('div[aria-label="Timeline: Your Home Timeline"]');
   if (timeline) {
