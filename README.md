@@ -43,9 +43,17 @@ A Chrome extension that boosts your Twitter engagement by highlighting strategic
 
 ```
 .
-├── extension/      # Chrome extension files
-└── server/         # Flask backend
-    ├── app.py
-    ├── requirements.txt
-    └── .env.example
+├── extension/                # Chrome extension files
+│   ├── background.js         # Handles communication with the server
+│   ├── content.js            # Interacts with Twitter/X pages
+│   ├── popup.html            # Popup UI
+│   ├── popup.js              # Popup logic
+│   ├── popup.css             # Popup styling
+│   ├── manifest.json         # Extension manifest
+│   └── images/               # Icons and badges
+├── server/                   # Backend Flask server
+│   ├── app.py                # Flask application logic
+│   ├── requirements.txt      # Python dependencies
+│   └── .env                  # Environment variables (Ollama URL, Model)
+└── README.md                 # This file
 ```
