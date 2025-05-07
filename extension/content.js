@@ -87,7 +87,7 @@ function loadSettingsAndScanTweets() {
     'filterHours', 
     'oldTweetAction', 
     'badTweetAction', 
-    'customPrompt', // Though not directly used in content.js, good to be aware if it affects scan logic indirectly
+    'customPrompt',
     'isEvaluationEnabled'
   ], (data) => {
     let newFilterHours = 1;
@@ -99,18 +99,14 @@ function loadSettingsAndScanTweets() {
     currentIsEvaluationEnabled = data.isEvaluationEnabled !== undefined ? data.isEvaluationEnabled : true;
 
     if (newFilterHours <= 0) {
-      currentFilterMilliseconds = -1; // Special value to indicate no filtering
+      currentFilterMilliseconds = -1;
     } else {
       currentFilterMilliseconds = newFilterHours * 60 * 60 * 1000;
     }
-    // Re-scan the timeline with the new filter settings
-    // We should ensure existing tweets are re-evaluated if the filter becomes less restrictive
-    // For now, let's just hide/show based on the new setting.
-    // A simple approach is to reset display and re-evaluate all.
+    
     document.querySelectorAll('article').forEach(article => {
-      article.style.display = ''; // Reset display before re-processing
-      article.dataset.evalState = ''; // Reset evalState to allow re-processing
-      // If evaluation is globally disabled, remove any LLM-related badges
+      article.style.display = '';
+      article.dataset.evalState = '';
       if (!currentIsEvaluationEnabled) {
         const llmBadges = article.querySelectorAll('img[alt*="Evaluating"], img[alt*="Good to reply"], img[alt*="Not recommended"], img[alt*="Error"]');
         llmBadges.forEach(b => b.remove());
@@ -123,16 +119,9 @@ function loadSettingsAndScanTweets() {
 function processTweet(article) {
   ensureTooltipExists();
 
-  // Skip if already processed for being old and marked (unless settings changed forcing re-eval)
   if (article.dataset.evalState === 'old_marked' && currentOldTweetAction === 'mark') {
-    // If it was marked as old and the setting is still to mark, we might not need to do much
-    // unless the filter time itself changed. The reset in loadSettingsAndScanTweets handles changing filter times.
-    // However, we must ensure it's visible if it was previously hidden by another state.
     article.style.display = '';
-    // We might need to re-apply the badge if it was removed by other logic, or if content could change.
-    // For simplicity, if it's already 'old_marked', let's assume its badge is correct for now.
-    // If filter time changes, the evalState is cleared and it will be re-processed fully below.
-    return; // Potentially skip if already correctly marked as old
+    return;
   }
 
   const timeEl = article.querySelector('time');
@@ -142,9 +131,8 @@ function processTweet(article) {
   if (currentFilterMilliseconds !== -1 && tweetTime < Date.now() - currentFilterMilliseconds) {
     if (currentOldTweetAction === 'hide') {
       article.style.display = 'none';
-    } else { // 'mark'
-      article.style.display = ''; // Ensure it's visible
-      // Remove any existing evaluation-related badges before adding the 'old_marked' one
+    } else {
+      article.style.display = '';
       const existingBadge = article.querySelector('img[alt*="Evaluating"], img[alt*="Good to reply"], img[alt*="Not recommended"], img[alt*="Error"]');
       if (existingBadge) existingBadge.remove();
 
@@ -154,17 +142,15 @@ function processTweet(article) {
       badge.alt = reasonText;
       addOrUpdateHoverTooltip(badge, reasonText);
       badge.style = 'position:absolute; top:5px; right:5px; width:20px; height:20px;';
-      article.style.position = 'relative'; // Ensure positioning context
-      if (!article.contains(badge)) { // Avoid adding multiple times if re-processed quickly
+      article.style.position = 'relative';
+      if (!article.contains(badge)) {
           article.appendChild(badge);
       }
       article.dataset.evalState = 'old_marked';
     }
-    return; // Don't proceed to LLM evaluation if it's old
+    return;
   }
 
-  // If tweet is NOT old, or if filter is off, ensure it's visible if it was previously hidden/marked as old.
-  // Also, if it was marked 'old_marked' but time filter changed making it NOT old, remove that specific badge.
   if (article.dataset.evalState === 'old_marked') {
     const oldBadge = article.querySelector('img[alt="Outside preferred timeframe"]');
     if (oldBadge) oldBadge.remove();
@@ -172,17 +158,14 @@ function processTweet(article) {
   }
   article.style.display = '';
 
-  // If global evaluation is disabled, stop here after age processing and cleanup.
   if (!currentIsEvaluationEnabled) {
-    // Ensure any lingering LLM badges from previous states are removed if evaluation just got disabled.
     const llmBadges = article.querySelectorAll('img[alt*="Evaluating"], img[alt*="Good to reply"], img[alt*="Not recommended"], img[alt*="Error"]');
     llmBadges.forEach(b => b.remove());
     return;
   }
 
-  // Standard processing if not filtered by age AND evaluation is enabled
   if (article.dataset.evalState && article.dataset.evalState !== 'pending') return;
-  if (article.dataset.evalState === 'pending') return; // Already pending LLM evaluation
+  if (article.dataset.evalState === 'pending') return;
 
   article.dataset.evalState = 'pending';
 
@@ -224,7 +207,6 @@ function processTweet(article) {
       }
 
       const data = response.data;
-      // Badge removal and further actions depend on the outcome and settings
 
       if (data.should_reply) {
         pendingBadge.remove();
@@ -236,19 +218,18 @@ function processTweet(article) {
         badge.alt = reasonText;
         addOrUpdateHoverTooltip(badge, reasonText);
         badge.style = 'position:absolute; top:5px; right:5px; width:20px; height:20px; background:#fff; border-radius:50%;';
-        if (!article.contains(badge)) { // Avoid duplicates if re-processed
+        if (!article.contains(badge)) {
             article.appendChild(badge);
         }
-      } else { // Not recommended by LLM (data.should_reply is false)
+      } else {
         pendingBadge.remove();
         if (currentBadTweetAction === 'hide') {
           article.style.display = 'none';
-          article.dataset.evalState = 'bad_hidden'; // New state for bad and hidden
-          // Ensure no other badges are present if it's hidden
+          article.dataset.evalState = 'bad_hidden';
           const existingBadges = article.querySelectorAll('img[alt*="Evaluating"], img[alt*="Good to reply"], img[alt*="Not recommended"], img[alt*="Error"], img[alt*="Outside preferred timeframe"]');
           existingBadges.forEach(b => b.remove());
-        } else { // 'mark' action for bad tweets
-          article.style.display = ''; // Ensure visible
+        } else {
+          article.style.display = '';
           article.dataset.evalState = 'bad';
           article.style.border = '2px solid #ccc';
           const badge = document.createElement('img');
@@ -257,10 +238,9 @@ function processTweet(article) {
           badge.alt = reasonText;
           addOrUpdateHoverTooltip(badge, reasonText);
           badge.style = 'position:absolute; top:5px; right:5px; width:20px; height:20px;';
-           // Remove other potential badges before adding this one
           const existingBadges = article.querySelectorAll('img[alt*="Evaluating"], img[alt*="Good to reply"], img[alt*="Error"], img[alt*="Outside preferred timeframe"]');
           existingBadges.forEach(b => b.remove());
-          if (!article.contains(badge)) { // Avoid duplicates if re-processed
+          if (!article.contains(badge)) {
             article.appendChild(badge);
           }
         }

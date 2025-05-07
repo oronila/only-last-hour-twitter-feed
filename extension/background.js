@@ -10,12 +10,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           tweet: message.tweet,
-          user_prompt_segment: userPromptSegment // Send the user's prompt segment
+          user_prompt_segment: userPromptSegment
         })
       })
       .then(res => {
         if (!res.ok) {
-          // Try to read the response body even if not ok, for more error details
           return res.text().then(text => {
             throw new Error(`Server responded with ${res.status}: ${text}`);
           });
@@ -29,7 +28,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ error: err.toString() });
       });
     });
-    // Return true to indicate sendResponse will be called asynchronously
     return true;
   }
 }); 
