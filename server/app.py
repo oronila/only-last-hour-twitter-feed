@@ -27,18 +27,20 @@ def check_tweet():
 
     try:
         payload = {
-            "model": os.getenv("OLLAMA_MODEL", "llama3.2:latest"),
+            "model": os.getenv("OLLAMA_MODEL", "qwen3"),
             "messages": [
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": prompt}
             ],
             "temperature": 0.7,
             "max_tokens": 150,
+            "response_format": { "type": "json_object" }
         }
         resp = requests.post(f"{OLLAMA_URL}/v1/chat/completions", json=payload)
         resp.raise_for_status()
         data = resp.json()
         content = data["choices"][0]["message"]["content"].strip()
+        print(f"Raw content from Ollama: '{content}'")
         result = json.loads(content)
         return jsonify(result)
     except Exception as e:
