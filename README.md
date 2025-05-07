@@ -1,6 +1,10 @@
 # X Vibe Replying
 
 A Chrome extension that boosts your Twitter engagement by highlighting strategic replies using a local LLM via Ollama.
+## Demo
+
+https://github.com/user-attachments/assets/a9d7aaa3-b5ee-4678-9936-30b0d0d7159b
+
 
 ## 🚀 Quick Start
 
