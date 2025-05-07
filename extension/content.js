@@ -28,14 +28,13 @@ function processTweet(article) {
   const tweetText = contentEl ? contentEl.innerText : '';
   if (!tweetText) return;
 
+  console.log('[content.js] sending checkTweet for:', tweetText);
   // Send to server for evaluation
-  fetch('http://localhost:5000/check_tweet', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({tweet: tweetText}),
-  })
-    .then(res => res.json())
-    .then(data => {
+  chrome.runtime.sendMessage(
+    { type: 'checkTweet', tweet: tweetText },
+    (response) => {
+      if (response.error) throw new Error(response.error);
+      const data = response.data;
       // Remove pending badge
       pendingBadge.remove();
       if (data.should_reply) {
@@ -57,17 +56,8 @@ function processTweet(article) {
         badge.style = 'position:absolute; top:5px; right:5px; background:#ccc; color:#000; padding:2px 4px; border-radius:3px; font-size:12px;';
         article.appendChild(badge);
       }
-    })
-    .catch(err => {
-      // Remove pending badge and mark error
-      pendingBadge.remove();
-      article.dataset.evalState = 'error';
-      const badge = document.createElement('div');
-      badge.innerText = '⚠️';
-      badge.title = 'Error evaluating tweet';
-      badge.style = 'position:absolute; top:5px; right:5px; background:#f00; color:#fff; padding:2px 4px; border-radius:3px; font-size:12px;';
-      article.appendChild(badge);
-    });
+    }
+  );
 }
 
 function scanTimeline() {
@@ -75,6 +65,7 @@ function scanTimeline() {
 }
 
 function init() {
+  console.log('[content.js] init called');
   scanTimeline();
   const timeline = document.querySelector('div[aria-label="Timeline: Your Home Timeline"]');
   if (timeline) {
