@@ -10,12 +10,18 @@ function processTweet(article) {
     return;
   }
 
-  // Ensure tweets from the last hour are visible
+  // Ensure recent tweets are visible
   article.style.display = '';
+  // Skip if already processed
+  if (article.dataset.evalState) return;
+  article.dataset.evalState = 'pending';
 
-  // Only evaluate once
-  if (article.dataset.evaluated) return;
-  article.dataset.evaluated = 'true';
+  // Add pending badge
+  const pendingBadge = document.createElement('div');
+  pendingBadge.innerText = '⏳';
+  pendingBadge.style = 'position:absolute; top:5px; right:5px; font-size:14px;';
+  article.style.position = 'relative';
+  article.appendChild(pendingBadge);
 
   // Extract tweet text
   const contentEl = article.querySelector('div[lang]');
@@ -30,17 +36,38 @@ function processTweet(article) {
   })
     .then(res => res.json())
     .then(data => {
+      // Remove pending badge
+      pendingBadge.remove();
       if (data.should_reply) {
-        // Highlight recommended tweets
+        // Good to reply
+        article.dataset.evalState = 'good';
         article.style.border = '2px solid #1da1f2';
-        article.style.position = 'relative';
         const badge = document.createElement('div');
-        badge.innerText = 'Good to reply';
+        badge.innerText = '✅';
+        badge.title = 'Good to reply';
         badge.style = 'position:absolute; top:5px; right:5px; background:#1da1f2; color:#fff; padding:2px 4px; border-radius:3px; font-size:12px;';
+        article.appendChild(badge);
+      } else {
+        // Not recommended
+        article.dataset.evalState = 'bad';
+        article.style.border = '2px solid #ccc';
+        const badge = document.createElement('div');
+        badge.innerText = '❌';
+        badge.title = 'Not recommended to reply';
+        badge.style = 'position:absolute; top:5px; right:5px; background:#ccc; color:#000; padding:2px 4px; border-radius:3px; font-size:12px;';
         article.appendChild(badge);
       }
     })
-    .catch(err => console.error('Error evaluating tweet:', err));
+    .catch(err => {
+      // Remove pending badge and mark error
+      pendingBadge.remove();
+      article.dataset.evalState = 'error';
+      const badge = document.createElement('div');
+      badge.innerText = '⚠️';
+      badge.title = 'Error evaluating tweet';
+      badge.style = 'position:absolute; top:5px; right:5px; background:#f00; color:#fff; padding:2px 4px; border-radius:3px; font-size:12px;';
+      article.appendChild(badge);
+    });
 }
 
 function scanTimeline() {
