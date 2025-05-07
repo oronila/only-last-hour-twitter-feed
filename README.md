@@ -63,3 +63,14 @@ A Chrome extension that boosts your Twitter engagement by highlighting strategic
 - Don't set the age filter below **3 hours**; hiding too many tweets may trigger rate limits or cause Twitter to block your feed.
 - Craft your custom prompt to fit your needs: include example tweets and replies that have worked for you.
 - Limit yourself to **20 replies per hour** to avoid appearing spammy and risking temporary bans.
+
+## ❓ FAQ
+
+**Q: Why did you make this?**
+A: I made it for myself to improve the rate at which I can reply to grow a following without spending so much time on Twitter.
+
+**Q: Why are the suggestions for recommended tweets so bad?**
+A: You really have to customize the prompt to get it to work effectively; larger qwen models or other open source models also prove to work better on a case-by-case basis.
+
+**Q: Why Ollama?**
+A: I'm cheap and I can run models for free.
