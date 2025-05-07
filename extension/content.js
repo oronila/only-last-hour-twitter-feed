@@ -17,9 +17,10 @@ function processTweet(article) {
   article.dataset.evalState = 'pending';
 
   // Add pending badge
-  const pendingBadge = document.createElement('div');
-  pendingBadge.innerText = '⏳';
-  pendingBadge.style = 'position:absolute; top:5px; right:5px; font-size:14px;';
+  const pendingBadge = document.createElement('img');
+  pendingBadge.src = chrome.runtime.getURL('images/hourglass-clipart.png');
+  pendingBadge.title = 'Evaluating tweet...';
+  pendingBadge.style = 'position:absolute; top:5px; right:5px; width:16px; height:16px;';
   article.style.position = 'relative';
   article.appendChild(pendingBadge);
 
@@ -36,19 +37,22 @@ function processTweet(article) {
       console.log('[content.js] Received response from background:', response);
       if (chrome.runtime.lastError) {
         console.error('[content.js] chrome.runtime.lastError:', chrome.runtime.lastError.message);
-        pendingBadge.innerText = 'Error!';
+        pendingBadge.src = chrome.runtime.getURL('images/381599_error_icon.png');
+        pendingBadge.title = 'Error: ' + chrome.runtime.lastError.message;
         article.dataset.evalState = 'error';
         return;
       }
       if (!response) {
         console.error('[content.js] Received undefined response from background.js');
-        pendingBadge.innerText = 'Error!';
+        pendingBadge.src = chrome.runtime.getURL('images/381599_error_icon.png');
+        pendingBadge.title = 'Error: No response from background script.';
         article.dataset.evalState = 'error';
         return;
       }
       if (response.error) {
         console.error('[content.js] Error from background script:', response.error);
-        pendingBadge.innerText = 'Error!';
+        pendingBadge.src = chrome.runtime.getURL('images/381599_error_icon.png');
+        pendingBadge.title = 'Error: ' + response.error;
         article.dataset.evalState = 'error';
         return;
       }
@@ -59,19 +63,19 @@ function processTweet(article) {
         // Good to reply
         article.dataset.evalState = 'good';
         article.style.border = '2px solid #1da1f2';
-        const badge = document.createElement('div');
-        badge.innerText = '✅';
-        badge.title = 'Good to reply';
-        badge.style = 'position:absolute; top:5px; right:5px; background:#1da1f2; color:#fff; padding:2px 4px; border-radius:3px; font-size:12px;';
+        const badge = document.createElement('img');
+        badge.src = chrome.runtime.getURL('images/Eo_circle_green_white_checkmark.svg.png');
+        badge.title = data.reason || 'Good to reply';
+        badge.style = 'position:absolute; top:5px; right:5px; width:20px; height:20px; background:#fff; border-radius:50%;';
         article.appendChild(badge);
       } else {
         // Not recommended
         article.dataset.evalState = 'bad';
         article.style.border = '2px solid #ccc';
-        const badge = document.createElement('div');
-        badge.innerText = '❌';
-        badge.title = 'Not recommended to reply';
-        badge.style = 'position:absolute; top:5px; right:5px; background:#ccc; color:#000; padding:2px 4px; border-radius:3px; font-size:12px;';
+        const badge = document.createElement('img');
+        badge.src = chrome.runtime.getURL('images/Red_X.svg.png');
+        badge.title = data.reason || 'Not recommended to reply';
+        badge.style = 'position:absolute; top:5px; right:5px; width:20px; height:20px;';
         article.appendChild(badge);
       }
     }

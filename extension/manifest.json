@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Twitter Reply Filter",
+  "name": "X Vibe Replying",
   "version": "0.1.0",
   "description": "Hide all tweets older than one hour on your timeline",
   "permissions": ["activeTab", "scripting"],
@@ -13,6 +13,12 @@
       "matches": ["https://twitter.com/*", "https://x.com/*"],
       "js": ["content.js"],
       "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["images/*.png"],
+      "matches": ["https://twitter.com/*", "https://x.com/*"]
     }
   ]
 } 
