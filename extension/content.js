@@ -33,7 +33,25 @@ function processTweet(article) {
   chrome.runtime.sendMessage(
     { type: 'checkTweet', tweet: tweetText },
     (response) => {
-      if (response.error) throw new Error(response.error);
+      console.log('[content.js] Received response from background:', response);
+      if (chrome.runtime.lastError) {
+        console.error('[content.js] chrome.runtime.lastError:', chrome.runtime.lastError.message);
+        pendingBadge.innerText = 'Error!';
+        article.dataset.evalState = 'error';
+        return;
+      }
+      if (!response) {
+        console.error('[content.js] Received undefined response from background.js');
+        pendingBadge.innerText = 'Error!';
+        article.dataset.evalState = 'error';
+        return;
+      }
+      if (response.error) {
+        console.error('[content.js] Error from background script:', response.error);
+        pendingBadge.innerText = 'Error!';
+        article.dataset.evalState = 'error';
+        return;
+      }
       const data = response.data;
       // Remove pending badge
       pendingBadge.remove();
