@@ -18,9 +18,36 @@ def check_tweet():
     if not tweet:
         return jsonify({"error": "No tweet provided"}), 400
 
+    strategic_examples = """
+    Example 1:
+    Tweet: "How do you think we should be pricing for very expensive models (o3) or ultra-long context windows (~100k LOC) in Cursor?
+
+    API pricing, higher subscription tier, something else?"
+    Reply: "higher subscription tier. i don’t want to feel like i wasted money if i get a bad response from a per use api call"
+
+    Tweet: "i've worked on a frontend project, i've also worked on a backend project 
+
+    believe me when I say backend is harder than frontend"
+    Reply: "until you have users complaining about the layout from 100 different perspectives"
+
+    Tweet: "Cluely launches in <24 hours. 
+
+    We're changing the definition of the word "cheating."
+
+    This will be the most ambitious project of my life. 
+
+    If we can accomplish what we set out to, we will change the course of human history.
+
+    4/20/25 2PM PST
+    @trycluely"
+
+    Reply: "i hope this ushers in a new era of unstructured learning to empower the most ambitious rather than take us back and remove our access to online exams"
+    """
+
     prompt = (
         f"You are an expert Twitter growth strategist. Your goal is to help me gain followers and maximize engagement, sometimes through engagement baiting. "
-        f"Given the following tweet, determine if it's a strategic one for me to reply to for audience growth. Be picky with your replies, only reply to tweets that are strategic. "
+        f"Here are some examples of successful reply tweets: {strategic_examples} "
+        f"Given the following tweet, determine if it's a strategic one for me to reply to for audience growth. {tweet}"
         "Respond with a JSON object containing three keys: "
         '"should_reply" (true or false based on its potential for my growth), '
         '"reason" (a brief explanation of why it is or isn\'t good for growth/engagement)'
@@ -48,4 +75,4 @@ def check_tweet():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5002, debug=True) 
+    app.run(host='0.0.0.0', port=5003, debug=True) 

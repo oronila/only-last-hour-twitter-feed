@@ -1,6 +1,7 @@
-const oneHourAgoMS = 1000 * 60 * 60 * 6;
-
 let customTooltip = null;
+let currentFilterMilliseconds = 1 * 60 * 60 * 1000; // Default to 1 hour
+let currentOldTweetAction = 'hide'; // Default action
+let currentBadTweetAction = 'mark'; // Default action for bad tweets
 
 function ensureTooltipExists() {
   if (!customTooltip) {
@@ -80,18 +81,88 @@ function addOrUpdateHoverTooltip(element, textOrProvider) {
     element.addEventListener('mouseleave', element.customMouseLeaveHandler);
 }
 
+function loadSettingsAndScanTweets() {
+  chrome.storage.sync.get(['filterHours', 'oldTweetAction', 'badTweetAction'], (data) => {
+    let newFilterHours = 1; // Default to 1 hour
+    if (data.filterHours !== undefined) {
+      newFilterHours = parseInt(data.filterHours, 10);
+    }
+    currentOldTweetAction = data.oldTweetAction || 'hide'; // Update and default
+    currentBadTweetAction = data.badTweetAction || 'mark'; // Load and default
+
+    if (newFilterHours <= 0) { // 0 or negative means show all
+      currentFilterMilliseconds = -1; // Special value to indicate no filtering
+    } else {
+      currentFilterMilliseconds = newFilterHours * 60 * 60 * 1000;
+    }
+    // Re-scan the timeline with the new filter settings
+    // We should ensure existing tweets are re-evaluated if the filter becomes less restrictive
+    // For now, let's just hide/show based on the new setting.
+    // A simple approach is to reset display and re-evaluate all.
+    document.querySelectorAll('article').forEach(article => {
+      article.style.display = ''; // Reset display before re-processing
+      article.dataset.evalState = ''; // Reset evalState to allow re-processing
+    });
+    scanTimeline();
+  });
+}
+
 function processTweet(article) {
   ensureTooltipExists();
+
+  // Skip if already processed for being old and marked (unless settings changed forcing re-eval)
+  if (article.dataset.evalState === 'old_marked' && currentOldTweetAction === 'mark') {
+    // If it was marked as old and the setting is still to mark, we might not need to do much
+    // unless the filter time itself changed. The reset in loadSettingsAndScanTweets handles changing filter times.
+    // However, we must ensure it's visible if it was previously hidden by another state.
+    article.style.display = '';
+    // We might need to re-apply the badge if it was removed by other logic, or if content could change.
+    // For simplicity, if it's already 'old_marked', let's assume its badge is correct for now.
+    // If filter time changes, the evalState is cleared and it will be re-processed fully below.
+    return; // Potentially skip if already correctly marked as old
+  }
+
   const timeEl = article.querySelector('time');
   if (!timeEl) return;
   const tweetTime = Date.parse(timeEl.getAttribute('datetime'));
-  if (tweetTime < Date.now() - oneHourAgoMS) {
-    article.style.display = 'none';
-    return;
+
+  if (currentFilterMilliseconds !== -1 && tweetTime < Date.now() - currentFilterMilliseconds) {
+    if (currentOldTweetAction === 'hide') {
+      article.style.display = 'none';
+    } else { // 'mark'
+      article.style.display = ''; // Ensure it's visible
+      // Remove any existing evaluation-related badges before adding the 'old_marked' one
+      const existingBadge = article.querySelector('img[alt*="Evaluating"], img[alt*="Good to reply"], img[alt*="Not recommended"], img[alt*="Error"]');
+      if (existingBadge) existingBadge.remove();
+
+      const badge = document.createElement('img');
+      badge.src = chrome.runtime.getURL('images/Red_X.svg.png');
+      const reasonText = 'Outside preferred timeframe';
+      badge.alt = reasonText;
+      addOrUpdateHoverTooltip(badge, reasonText);
+      badge.style = 'position:absolute; top:5px; right:5px; width:20px; height:20px;';
+      article.style.position = 'relative'; // Ensure positioning context
+      if (!article.contains(badge)) { // Avoid adding multiple times if re-processed quickly
+          article.appendChild(badge);
+      }
+      article.dataset.evalState = 'old_marked';
+    }
+    return; // Don't proceed to LLM evaluation if it's old
   }
 
+  // If tweet is NOT old, or if filter is off, ensure it's visible if it was previously hidden/marked as old.
+  // Also, if it was marked 'old_marked' but time filter changed making it NOT old, remove that specific badge.
+  if (article.dataset.evalState === 'old_marked') {
+    const oldBadge = article.querySelector('img[alt="Outside preferred timeframe"]');
+    if (oldBadge) oldBadge.remove();
+    article.dataset.evalState = ''; // Clear state so it can be evaluated by LLM if needed
+  }
   article.style.display = '';
-  if (article.dataset.evalState) return;
+
+  // Standard processing if not filtered by age
+  if (article.dataset.evalState && article.dataset.evalState !== 'pending') return; // Skip if processed by LLM or errored
+  if (article.dataset.evalState === 'pending') return; // Already pending LLM evaluation
+
   article.dataset.evalState = 'pending';
 
   const pendingBadge = document.createElement('img');
@@ -110,32 +181,32 @@ function processTweet(article) {
     { type: 'checkTweet', tweet: tweetText },
     (response) => {
       if (chrome.runtime.lastError) {
-        const errorText = 'Error: Make sure the flask server is running.';
         pendingBadge.src = chrome.runtime.getURL('images/381599_error_icon.png');
-        pendingBadge.alt = errorText;
-        addOrUpdateHoverTooltip(pendingBadge, errorText);
+        pendingBadge.alt = 'Error: Make sure the flask server is running.';
+        addOrUpdateHoverTooltip(pendingBadge, 'Error: Make sure the flask server is running.');
         article.dataset.evalState = 'error';
         return;
       }
       if (!response) {
-        const errorText = 'Error: No response from background script.';
         pendingBadge.src = chrome.runtime.getURL('images/381599_error_icon.png');
-        pendingBadge.alt = errorText;
-        addOrUpdateHoverTooltip(pendingBadge, errorText);
+        pendingBadge.alt = 'Error: No response from background script.';
+        addOrUpdateHoverTooltip(pendingBadge, 'Error: No response from background script.');
         article.dataset.evalState = 'error';
         return;
       }
       if (response.error) {
-        const errorText = 'Error: ' + response.error;
         pendingBadge.src = chrome.runtime.getURL('images/381599_error_icon.png');
-        pendingBadge.alt = errorText;
-        addOrUpdateHoverTooltip(pendingBadge, errorText);
+        pendingBadge.alt = 'Error: ' + response.error;
+        addOrUpdateHoverTooltip(pendingBadge, 'Error: ' + response.error);
         article.dataset.evalState = 'error';
         return;
       }
+
       const data = response.data;
-      pendingBadge.remove();
+      // Badge removal and further actions depend on the outcome and settings
+
       if (data.should_reply) {
+        pendingBadge.remove();
         article.dataset.evalState = 'good';
         article.style.border = '2px solid #1da1f2';
         const badge = document.createElement('img');
@@ -144,17 +215,34 @@ function processTweet(article) {
         badge.alt = reasonText;
         addOrUpdateHoverTooltip(badge, reasonText);
         badge.style = 'position:absolute; top:5px; right:5px; width:20px; height:20px; background:#fff; border-radius:50%;';
-        article.appendChild(badge);
-      } else {
-        article.dataset.evalState = 'bad';
-        article.style.border = '2px solid #ccc';
-        const badge = document.createElement('img');
-        badge.src = chrome.runtime.getURL('images/Red_X.svg.png');
-        const reasonText = data.reason || 'Not recommended to reply';
-        badge.alt = reasonText;
-        addOrUpdateHoverTooltip(badge, reasonText);
-        badge.style = 'position:absolute; top:5px; right:5px; width:20px; height:20px;';
-        article.appendChild(badge);
+        if (!article.contains(badge)) { // Avoid duplicates if re-processed
+            article.appendChild(badge);
+        }
+      } else { // Not recommended by LLM (data.should_reply is false)
+        pendingBadge.remove();
+        if (currentBadTweetAction === 'hide') {
+          article.style.display = 'none';
+          article.dataset.evalState = 'bad_hidden'; // New state for bad and hidden
+          // Ensure no other badges are present if it's hidden
+          const existingBadges = article.querySelectorAll('img[alt*="Evaluating"], img[alt*="Good to reply"], img[alt*="Not recommended"], img[alt*="Error"], img[alt*="Outside preferred timeframe"]');
+          existingBadges.forEach(b => b.remove());
+        } else { // 'mark' action for bad tweets
+          article.style.display = ''; // Ensure visible
+          article.dataset.evalState = 'bad';
+          article.style.border = '2px solid #ccc';
+          const badge = document.createElement('img');
+          badge.src = chrome.runtime.getURL('images/Red_X.svg.png');
+          const reasonText = data.reason || 'Not recommended to reply';
+          badge.alt = reasonText;
+          addOrUpdateHoverTooltip(badge, reasonText);
+          badge.style = 'position:absolute; top:5px; right:5px; width:20px; height:20px;';
+           // Remove other potential badges before adding this one
+          const existingBadges = article.querySelectorAll('img[alt*="Evaluating"], img[alt*="Good to reply"], img[alt*="Error"], img[alt*="Outside preferred timeframe"]');
+          existingBadges.forEach(b => b.remove());
+          if (!article.contains(badge)) { // Avoid duplicates if re-processed
+            article.appendChild(badge);
+          }
+        }
       }
     }
   );
@@ -165,14 +253,22 @@ function scanTimeline() {
 }
 
 function init() {
-  scanTimeline();
+  loadSettingsAndScanTweets(); // Use renamed function
+
   const timeline = document.querySelector('div[aria-label="Timeline: Your Home Timeline"]');
   if (timeline) {
     const observer = new MutationObserver(scanTimeline);
     observer.observe(timeline, {childList: true, subtree: true});
   } else {
-    setTimeout(init, 2000);
+    setTimeout(init, 2000); // Retry initialization if timeline not found
   }
 }
+
+// Listen for changes in storage
+chrome.storage.onChanged.addListener((changes, namespace) => {
+  if (namespace === 'sync' && (changes.filterHours || changes.oldTweetAction || changes.badTweetAction)) { // Listen to all three
+    loadSettingsAndScanTweets(); // Use renamed function
+  }
+});
 
 init(); 

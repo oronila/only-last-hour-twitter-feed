@@ -11,7 +11,28 @@
     <p>Settings and options will go here.</p>
     <!-- Example: A button or a setting toggle -->
     <!-- <button id="myButton">Click me</button> -->
+    <div>
+      <label for="filterHours">Hide tweets older than (hours):</label>
+      <input type="number" id="filterHours" name="filterHours" min="0" value="1">
+      <p style="font-size: 11px; color: #555; margin-top: 4px;">(Set to 0 to show all tweets)</p>
+    </div>
+    <div style="margin-top: 10px;">
+      <label for="oldTweetAction">Action for old tweets:</label>
+      <select id="oldTweetAction" name="oldTweetAction">
+        <option value="hide">Hide them</option>
+        <option value="mark">Mark as not recommended</option>
+      </select>
+    </div>
+    <div style="margin-top: 10px;">
+      <label for="badTweetAction">Action for non-strategic tweets:</label>
+      <select id="badTweetAction" name="badTweetAction">
+        <option value="mark">Mark as not recommended</option>
+        <option value="hide">Hide them</option>
+      </select>
+    </div>
+    <button id="saveSettings" style="margin-top: 15px;">Save</button>
+    <p id="statusMessage" style="font-size: 12px; color: green; margin-top: 10px;"></p>
   </div>
-  <!-- <script src="popup.js"></script> -->
+  <script src="popup.js"></script>
 </body>
 </html> 

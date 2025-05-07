@@ -1,6 +1,6 @@
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'checkTweet') {
-    fetch('http://localhost:5002/check_tweet', {
+    fetch('http://localhost:5003/check_tweet', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tweet: message.tweet })
