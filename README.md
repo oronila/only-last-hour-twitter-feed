@@ -57,3 +57,9 @@ A Chrome extension that boosts your Twitter engagement by highlighting strategic
 │   └── .env                  # Environment variables (Ollama URL, Model)
 └── README.md                 # This file
 ```
+
+## 💡 Tips
+
+- Don't set the age filter below **3 hours**; hiding too many tweets may trigger rate limits or cause Twitter to block your feed.
+- Craft your custom prompt to fit your needs: include example tweets and replies that have worked for you.
+- Limit yourself to **20 replies per hour** to avoid appearing spammy and risking temporary bans.

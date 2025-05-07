@@ -149,7 +149,7 @@ function processTweet(article) {
       if (existingBadge) existingBadge.remove();
 
       const badge = document.createElement('img');
-      badge.src = chrome.runtime.getURL('images/Red_X.svg.png');
+      badge.src = chrome.runtime.getURL('images/redX.png');
       const reasonText = 'Outside preferred timeframe';
       badge.alt = reasonText;
       addOrUpdateHoverTooltip(badge, reasonText);
@@ -187,7 +187,7 @@ function processTweet(article) {
   article.dataset.evalState = 'pending';
 
   const pendingBadge = document.createElement('img');
-  pendingBadge.src = chrome.runtime.getURL('images/hourglass-clipart.png');
+  pendingBadge.src = chrome.runtime.getURL('images/loadingIcon.png');
   pendingBadge.alt = 'Evaluating tweet...';
   addOrUpdateHoverTooltip(pendingBadge, 'Evaluating tweet...');
   pendingBadge.style = 'position:absolute; top:5px; right:5px; width:16px; height:16px;';
@@ -202,21 +202,21 @@ function processTweet(article) {
     { type: 'checkTweet', tweet: tweetText },
     (response) => {
       if (chrome.runtime.lastError) {
-        pendingBadge.src = chrome.runtime.getURL('images/381599_error_icon.png');
+        pendingBadge.src = chrome.runtime.getURL('images/errorIcon.png');
         pendingBadge.alt = 'Error: Make sure the flask server is running.';
         addOrUpdateHoverTooltip(pendingBadge, 'Error: Make sure the flask server is running.');
         article.dataset.evalState = 'error';
         return;
       }
       if (!response) {
-        pendingBadge.src = chrome.runtime.getURL('images/381599_error_icon.png');
+        pendingBadge.src = chrome.runtime.getURL('images/errorIcon.png');
         pendingBadge.alt = 'Error: No response from background script.';
         addOrUpdateHoverTooltip(pendingBadge, 'Error: No response from background script.');
         article.dataset.evalState = 'error';
         return;
       }
       if (response.error) {
-        pendingBadge.src = chrome.runtime.getURL('images/381599_error_icon.png');
+        pendingBadge.src = chrome.runtime.getURL('images/errorIcon.png');
         pendingBadge.alt = 'Error: ' + response.error;
         addOrUpdateHoverTooltip(pendingBadge, 'Error: ' + response.error);
         article.dataset.evalState = 'error';
@@ -231,7 +231,7 @@ function processTweet(article) {
         article.dataset.evalState = 'good';
         article.style.border = '2px solid #1da1f2';
         const badge = document.createElement('img');
-        badge.src = chrome.runtime.getURL('images/Eo_circle_green_white_checkmark.svg.png');
+        badge.src = chrome.runtime.getURL('images/greenCheck.png');
         const reasonText = data.reason || 'Good to reply';
         badge.alt = reasonText;
         addOrUpdateHoverTooltip(badge, reasonText);
@@ -252,7 +252,7 @@ function processTweet(article) {
           article.dataset.evalState = 'bad';
           article.style.border = '2px solid #ccc';
           const badge = document.createElement('img');
-          badge.src = chrome.runtime.getURL('images/Red_X.svg.png');
+          badge.src = chrome.runtime.getURL('images/redX.png');
           const reasonText = data.reason || 'Not recommended to reply';
           badge.alt = reasonText;
           addOrUpdateHoverTooltip(badge, reasonText);
