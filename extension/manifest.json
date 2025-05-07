@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Twitter Hourly Filter",
+  "name": "Twitter Reply Filter",
   "version": "0.1.0",
   "description": "Hide all tweets older than one hour on your timeline",
   "permissions": ["activeTab", "scripting"],
